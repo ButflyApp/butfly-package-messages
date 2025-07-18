@@ -1,0 +1,6 @@
+src/
+tests/
+.github/
+.git/
+.gitignore
+jsconfig.json 

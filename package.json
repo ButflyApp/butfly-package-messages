@@ -1,25 +1,39 @@
 {
-  "name": "@butfly/messages",
-  "version": "1.1.8",
-  "main": "lib/index.ts",
-  "files": [
-    "lib"
-  ],
-  "scripts": {
-    "build": "npx tsc"
+  "name": "@habitar/messages",
+  "version": "1.0.4",
+  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Habitar-App/habitar-package-messages.git"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "dependencies": {
+    "class-validator": "^0.14.2"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "bun-types": "^1.2.14",
+    "bunchee": "^5.6.2"
   },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
+  "exports": {
+    "import": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "require": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "dependencies": {
-    "@types/amqplib": "^0.10.5",
-    "@types/winston": "^2.4.4",
-    "amqplib": "^0.10.3",
-    "typescript": "^5.0.0",
-    "uuid": "^9.0.1",
-    "winston": "^3.11.0"
-  }
+  "bugs": {
+    "url": "https://github.com/Habitar-App/habitar-package-messages/issues"
+  },
+  "description": "",
+  "homepage": "https://github.com/Habitar-App/habitar-package-messages#readme",
+  "keywords": [],
+  "license": "ISC",
+  "scripts": {
+    "build": "bunchee"
+  },
+  "types": "./dist/index.d.ts"
 }

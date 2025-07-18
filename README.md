@@ -1,4 +1,4 @@
-# @butfly/messages
+# @habitar/messages
 
 To install dependencies:
 

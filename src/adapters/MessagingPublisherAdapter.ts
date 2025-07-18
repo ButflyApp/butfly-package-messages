@@ -1,6 +1,7 @@
 import { connect } from "amqplib";
 import { Logger } from "winston";
 import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
+import { v4 as uuidv4 } from 'uuid';
 
 export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
   private logger: Logger
@@ -11,6 +12,7 @@ export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
 
   async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string; queue?: string; message: any, config?: { autoSetOrigin?: boolean } }) {
     if (config.autoSetOrigin) message.messageOrigin = process.env.SERVICE_NAME
+    if(!message.habitarProcessUid) message.habitarProcessUid = uuidv4()
     const connection = await connect({
       heartbeat: 5,
       hostname: process.env.AMQP_CONNECTION,
