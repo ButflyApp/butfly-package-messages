@@ -1,16 +1,16 @@
 import { connect } from "amqplib";
-import { Logger } from "winston";
+import pino from "pino";
 import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
 import { v4 as uuidv4 } from 'uuid';
 
 export class RabbitPublisherAdapter implements IMessagingPublisherAdapter {
-  private logger: Logger
+  private logger: pino.Logger<never, boolean>
   private defaultConfig = { autoSetOrigin: true }
-  constructor({ logger }: { logger: Logger }) {
+  constructor({ logger }: { logger: pino.Logger<never, boolean> }) {
     this.logger = logger
   }
 
-  async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string; queue?: string; message: any, config?: { autoSetOrigin?: boolean } }) {
+  async sendMessage({ exchange, queue, message, config = this.defaultConfig }: { exchange?: string, queue?: string, message: any, config?: { autoSetOrigin?: boolean } }) {
     if (config.autoSetOrigin) message.messageOrigin = process.env.SERVICE_NAME
     if(!message.habitarProcessUid) message.habitarProcessUid = uuidv4()
     const connection = await connect({

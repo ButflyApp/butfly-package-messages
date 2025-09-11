@@ -1,5 +1,5 @@
 import { ValidationError } from "class-validator";
-import { Logger } from "winston";
+import pino from "pino";
 
 export class AppError extends Error {
   public readonly statusCode: number;
@@ -35,7 +35,7 @@ const extractValidationErrors = (validationErrors: ValidationError[]): string[] 
 };
 
 export class ErrorHandler {
-  constructor(private readonly logger: Logger) {}
+  constructor(private readonly logger: pino.Logger<never, boolean>) {}
 
   handleError(error: Error, context: any = {}): {
     message: string;

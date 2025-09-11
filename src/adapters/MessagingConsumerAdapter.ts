@@ -1,5 +1,5 @@
 import { Channel, Connection, ConsumeMessage } from "amqplib";
-import { Logger } from "winston";
+import pino from "pino";
 import { IMessagingConsumerAdapter } from "../contracts/IMessagingConsumer";
 import { IMessagingPublisherAdapter } from "../contracts/IMessagingPublisher";
 import { v4 } from "uuid";
@@ -15,7 +15,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
   private useCase: { execute: (data: any) => Promise<any> | any };
   private options: RabbitConsumerAdapterOptions;
   private messagingPublisher: IMessagingPublisherAdapter;
-  private logger: Logger;
+  private logger: pino.Logger<never, boolean>;
   private amqpConnection: (data: {
     exchange: string;
     queues: string[];
@@ -35,7 +35,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     }: {
       useCase: { execute: (data: any) => Promise<any> | any };
       messagingPublisher: IMessagingPublisherAdapter;
-      logger: Logger;
+      logger: pino.Logger<never, boolean>;
       amqpConnection: (data: {
         exchange: string;
         queues: string[];
@@ -120,7 +120,7 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
           message: { requeueUid: jsonObject?.requeueUid },
         });
 
-      this.logger.info(`${successMessage}`, JSON.stringify(jsonObject));
+      this.logger.info(jsonObject, successMessage);
     } catch (error: any) {
       channel.nack(message as ConsumeMessage, undefined, this.config.requeue);
 

@@ -1,3 +1,3 @@
 export interface IMessagingPublisherAdapter {
-  sendMessage({ exchange: string, message: any }): Promise<void>
+  sendMessage({ exchange, queue, message, config }: { exchange?: string, queue?: string, message: any, config?: { autoSetOrigin?: boolean } }): Promise<void>
 }
