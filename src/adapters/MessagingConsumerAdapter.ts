@@ -11,6 +11,23 @@ type RabbitConsumerAdapterOptions = {
   successMessage: string;
 };
 
+const ID_KEYS = [
+  "uid",
+  "id",
+  "habitarProcessUid",
+  "requeueUid",
+  "companyUid",
+  "userUid",
+];
+
+const pickIdentifier = (payload: any): string => {
+  if (!payload || typeof payload !== "object") return "unknown";
+  for (const key of ID_KEYS) {
+    if (payload[key]) return `${key}=${payload[key]}`;
+  }
+  return "no-id";
+};
+
 export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
   private useCase: { execute: (data: any) => Promise<any> | any };
   private options: RabbitConsumerAdapterOptions;
@@ -62,10 +79,15 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     const { queue, exchange, successMessage } = this.options;
     const queueName = `${process.env.SERVICE_NAME}.${queue}`;
 
-    const { channel, connection } = await this.amqpConnection({
+    const { channel } = await this.amqpConnection({
       exchange,
       queues: [queueName],
     });
+
+    this.logger.info(
+      { exchange, queue: queueName },
+      `Consumer is listening on queue "${queueName}" (exchange "${exchange}")`
+    );
 
     await channel.consume(queueName, async (message) => {
       const queueMessage = message?.content?.toString();
@@ -93,10 +115,15 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     queueMessage: any,
     message: ConsumeMessage | null
   ) {
+    this.logger.info(
+      { queue: queueName, batchSize: queueMessage.length },
+      `Received batch of ${queueMessage.length} messages on queue "${queueName}", splitting into individual messages`
+    );
+
     for (const item of queueMessage) {
       await channel.sendToQueue(queueName, Buffer.from(JSON.stringify(item)));
     }
-    channel.ack(message as ConsumeMessage)
+    channel.ack(message as ConsumeMessage);
   }
 
   private async consumeObject(
@@ -106,9 +133,28 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
     queueName: string,
     successMessage: string
   ) {
+    const identifier = pickIdentifier(jsonObject);
+    const habitarProcessUid = jsonObject?.habitarProcessUid;
+
+    this.logger.info(
+      {
+        queue: queueName,
+        exchange: this.options.exchange,
+        habitarProcessUid,
+        messageOrigin: jsonObject?.messageOrigin,
+        payload: jsonObject,
+      },
+      `Received message on queue "${queueName}" (${identifier})`
+    );
+
     try {
-      if (jsonObject.messageOrigin === process.env.SERVICE_NAME)
+      if (jsonObject.messageOrigin === process.env.SERVICE_NAME) {
+        this.logger.info(
+          { queue: queueName, habitarProcessUid, identifier },
+          `Skipping self-originated message on queue "${queueName}" (${identifier})`
+        );
         return channel.ack(message as ConsumeMessage);
+      }
 
       await this.useCase.execute(jsonObject);
 
@@ -120,7 +166,15 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
           message: { requeueUid: jsonObject?.requeueUid },
         });
 
-      this.logger.info(jsonObject, successMessage);
+      this.logger.info(
+        {
+          queue: queueName,
+          exchange: this.options.exchange,
+          habitarProcessUid,
+          identifier,
+        },
+        `${successMessage} (queue="${queueName}", ${identifier})`
+      );
     } catch (error: any) {
       channel.nack(message as ConsumeMessage, undefined, this.config.requeue);
 
@@ -128,6 +182,8 @@ export class RabbitConsumerAdapter implements IMessagingConsumerAdapter {
         exchange: this.options.exchange,
         message: jsonObject,
         queue: queueName,
+        habitarProcessUid,
+        identifier,
       });
 
       await this.messagingPublisher.sendMessage({
